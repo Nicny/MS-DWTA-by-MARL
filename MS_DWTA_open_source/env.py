@@ -69,7 +69,6 @@ class AirDefense(BaseEnvironment):
         print("环境验证：是否动态奖励：", self.dr)
 
     def reset(self, app_mode=None):
-        # 调用父类的重置函数
         super(AirDefense, self).reset()
         self.blue_ship = {}
         self.blue_missile = {}
@@ -91,16 +90,12 @@ class AirDefense(BaseEnvironment):
         self.scenario = super(AirDefense, self).step()
 
     def _construct_side_entity(self):
-        """
-        构造各方实体
-        """
         self.redside = self.scenario.get_side_by_name(self.red_side_name)
         self.redside.static_construct()
         self.blueside = self.scenario.get_side_by_name(self.blue_side_name)
         self.blueside.static_construct()
 
     def _init_unit_list(self):
-        """初始化单元列表"""
         temp_value_1 = {}
         for key, value in self.blueside.ships.items():
             temp_value_1["guid"] = key
@@ -150,7 +145,7 @@ class AirDefense(BaseEnvironment):
         health = self.get_health_agent(agent_id)
         if health != 0:
             ship = self.blue_ship[agent_id]["unit"]
-            total_weapon = ship.get_mounts()  # 返回dic，key是三种挂载的guid，value是三种CMount类，这里并不是数量
+            total_weapon = ship.get_mounts()
             for key in total_weapon:
                 weapon_status = total_weapon[key].m_ComponentStatus
                 if weapon_status == 0:
@@ -194,10 +189,10 @@ class AirDefense(BaseEnvironment):
     def weapon_permit(self, agent_id, own_dist, vessel_dist):
         weapon_permission = [0, 0, 0, 0]
         weapon_num_list = self.get_weapon_num(agent_id)
-        if vessel_dist > self.border:    # 目标在远距离（>50km)情况下，只允许0,1这两艘船进行防御
-            if agent_id in [3, 4, 5, 6]:    # 因此其他三只船，直接不能开火
+        if vessel_dist > self.border:
+            if agent_id in [3, 4, 5, 6]:
                 return weapon_permission
-            else:    # 对于剩下两只船，可以在允许射程内进行开火
+            else:
                 if self.min_fire_range_1 < own_dist < self.fire_range_1 and weapon_num_list[0] > 0:
                     weapon_permission[0] = 1
                 if self.min_fire_range_2 < own_dist < self.fire_range_2 and weapon_num_list[1] > 0:
@@ -207,10 +202,10 @@ class AirDefense(BaseEnvironment):
                 if self.min_fire_range_4 < own_dist < self.fire_range_4 and weapon_num_list[3] > 0:
                     weapon_permission[3] = 1
                 return weapon_permission
-        elif own_dist > self.own_defense:    # 目标在中距离（15km<dist<50km)情况下，只允许2,3这两艘船进行防御
-            if agent_id in [0, 1, 2, 6]:    # 因此其他三只船，直接不能开火
+        elif own_dist > self.own_defense:
+            if agent_id in [0, 1, 2, 6]:
                 return weapon_permission
-            else:    # 对于剩下两只船，可以在允许射程内进行开火
+            else:
                 if self.min_fire_range_1 < own_dist < self.fire_range_1 and weapon_num_list[0] > 0:
                     weapon_permission[0] = 1
                 if self.min_fire_range_2 < own_dist < self.fire_range_2 and weapon_num_list[1] > 0:
@@ -220,7 +215,7 @@ class AirDefense(BaseEnvironment):
                 if self.min_fire_range_4 < own_dist < self.fire_range_4 and weapon_num_list[3] > 0:
                     weapon_permission[3] = 1
                 return weapon_permission
-        else:    # 目标在近距离（dist<15km)情况下，都有开火权限
+        else:
             if weapon_num_list[0] > 0:
                 weapon_permission[0] = 1
             if weapon_num_list[1] > 0:
@@ -248,7 +243,7 @@ class AirDefense(BaseEnvironment):
                         own_dist = get_two_point_distance(al_lon, al_lat, e_lon, e_lat)
                         vessel_dist = get_two_point_distance(self.center_lon, self.center_lat, e_lon, e_lat)
                         weapon_permission = self.weapon_permit(al_id, own_dist, vessel_dist)
-                        if weapon_permission != [0, 0, 0, 0]:  # 该船与该弹之间符合开火条件
+                        if weapon_permission != [0, 0, 0, 0]:
                             dist_array[al_id, e_id] = own_dist
                             weapon_permission_array[al_id][e_id] = weapon_permission
         return dist_array, weapon_permission_array
@@ -267,7 +262,7 @@ class AirDefense(BaseEnvironment):
     def record_name(self, unit):
         name = unit.strName[-2:]
         fire_unit_guid = unit.m_FiringUnitGuid
-        fire_unit = self.scenario.situation.get_obj_by_guid(fire_unit_guid)  # 问题：会返回None
+        fire_unit = self.scenario.situation.get_obj_by_guid(fire_unit_guid)
         if fire_unit:
             fire_unit_name = fire_unit.strName
             for key, value in self.rank_dic.items():
@@ -285,18 +280,18 @@ class AirDefense(BaseEnvironment):
         self.all_avail_target = [0] * self.n_enemies
         for key in self.blueside.contacts:
             contact_type = self.blueside.contacts[key].m_ContactType
-            type_list.append(int(contact_type))  # 所有观测的种类
-            if contact_type == 1:  # 1：表示导弹
+            type_list.append(int(contact_type))
+            if contact_type == 1:
                 unit = self.blueside.contacts[key]
-                true_unit = unit.get_actual_unit()    # 问题：会返回None
+                true_unit = unit.get_actual_unit()
                 if true_unit and unit.iWeaponsAimingAtMe == 0:
                     idx = self.get_idx(true_unit)
                     # print("索引号为：", idx)
                     if idx is not None:
                         self.all_avail_target[idx] = 1
                         # print("索引号列表为：", self.all_avail_target)
-                        if self.red_missile[idx]["guid"] is None:    # 防止重复计算
-                            self.red_missile[idx]["guid"] = key    # 这里的key是蓝方对红方观测的key
+                        if self.red_missile[idx]["guid"] is None:
+                            self.red_missile[idx]["guid"] = key
                             self.red_missile[idx]["unit"] = true_unit
         # return self.all_avail_target, self.rank_dic
 
@@ -316,7 +311,6 @@ class AirDefense(BaseEnvironment):
             lat = ship.dLatitude
 
             # avail_actions = self.get_avail_agent_actions(agent_id)
-            """enemy_features"""
             for e_id, e_value in enumerate(self.all_avail_target):
                 if e_value == 1:
                     e_unit = self.red_missile[e_id]["unit"]
@@ -348,7 +342,6 @@ class AirDefense(BaseEnvironment):
                     enemy_feats[e_id, 4] = e_speed / 1000
                     enemy_feats[e_id, 5] = e_threat
 
-            """ally_features"""
             al_ids = [
                 al_id for al_id in range(self.n_agents) if al_id != agent_id
             ]
@@ -372,7 +365,6 @@ class AirDefense(BaseEnvironment):
                     ally_feats[i, 6] = al_weapon[2] / 100
                     ally_feats[i, 7] = al_weapon[3] / 100
 
-            """own features"""
             own_feats[0] = (lon - 100) / 100
             own_feats[1] = lat / 100
             own_feats[2] = health
@@ -461,7 +453,7 @@ class AirDefense(BaseEnvironment):
             if action > 0:
                 weapon = math.floor((action - 1) / self.n_enemies)
                 target = action - weapon * self.n_enemies - 1
-                if a_id == 4:    # 旗舰的武器种类只有一种
+                if a_id == 4:
                     weapon = 3
                 target_guid = self.red_missile[target]["guid"]
                 response = unit.allocate_weapon_to_target(target_guid, self.weapon_guid[weapon], 1)
@@ -566,9 +558,9 @@ class AirDefense(BaseEnvironment):
         path = "D:/Mozi/MoziServer/bin/Logs"
         lists = os.listdir(path)
         lists.sort(key=lambda fn: os.path.getmtime(path + "/" + fn))
-        file_newest_path = os.path.join(path, lists[-1])    # 最新的
+        file_newest_path = os.path.join(path, lists[-1])
         wasted_file_path = os.path.join(path, lists[0])
-        os.remove(wasted_file_path)    # 删除没有用的lua执行文件
+        os.remove(wasted_file_path)
 
         f = open(file_newest_path, encoding='utf-8')
 
@@ -679,7 +671,7 @@ class AirDefense(BaseEnvironment):
                     single_intercept_reward = 0.1 * (0.9**fire_ep_len)
                     intercept_reward_list[fire_last_time] += single_intercept_reward
                     intercept_sum += 1
-                    intercept_list[step] += 1   # 这里好像是没有重塑的拦截列表，但是奖励列表变了就行；
+                    intercept_list[step] += 1
 
         terminal = False
         if intercept_sum == self.n_enemies:
