@@ -1,4 +1,6 @@
-The code can be used for multi-ship dynamic weapon target assignment. Familiarity with the  simulation platform and related AI interfaces is required to utilize this code effectively. Additionally, the following modifications are recommended:
+Note: Our work is not targeted at any organization or country, and there is no conflict of interest. However, due to the special nature of defense topics, in order to avoid improper use of the code and possible ethical concerns, we have decided not to open the environment code in public, but only to open the code of the algorithm. If you have any questions, please leave a message in the question area.
+
+The code can be used for multi-ship dynamic weapon target assignment. Familiarity with the simulation platform and related AI interfaces is required to utilize this code effectively. Additionally, the following modifications are recommended:
 
 1、Modify the platform path within the code.
 
